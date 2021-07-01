@@ -23,12 +23,14 @@ data Optional a =
 --
 -- >>> mapOptional (+1) (Full 8)
 -- Full 9
-mapOptional ::
-  (a -> b)
-  -> Optional a
-  -> Optional b
-mapOptional =
-  error "todo: Course.Optional#mapOptional"
+mapOptional :: (a -> b) -> Optional a  -> Optional b
+mapOptional _ Empty = Empty
+mapOptional f (Full a) = Full (f a)
+
+-- as the data type has the Patter Full a it can be matched on that for the a
+-- this is a functor for Optional type class
+--(<$>) :: (a -> b) -> k a -> k b
+--  error "todo: Course.Optional#mapOptional"
 
 -- | Bind the given function on the possible value.
 --
@@ -40,12 +42,13 @@ mapOptional =
 --
 -- >>> bindOptional (\n -> if even n then Full (n - 1) else Full (n + 1)) (Full 9)
 -- Full 10
-bindOptional ::
-  (a -> Optional b)
-  -> Optional a
-  -> Optional b
-bindOptional =
-  error "todo: Course.Optional#bindOptional"
+bindOptional :: (a -> Optional b) -> Optional a -> Optional b
+bindOptional _ Empty = Empty
+bindOptional f (Full a) = f a
+
+-- this is a monadic bind written for the Optional Type clas
+--(>>=) :: Monad k => k a -> (a -> k b) -> k b
+--  error "todo: Course.Optional#bindOptional"
 
 -- | Return the possible value if it exists; otherwise, the second argument.
 --
@@ -54,12 +57,11 @@ bindOptional =
 --
 -- >>> Empty ?? 99
 -- 99
-(??) ::
-  Optional a
-  -> a
-  -> a
-(??) =
-  error "todo: Course.Optional#(??)"
+(??) :: Optional a -> a -> a
+(??) x val = case x of
+  Full z -> z
+  Empty -> val
+-- this is just a pattern Match
 
 -- | Try the first optional for a value. If it has a value, use it; otherwise,
 -- use the second value.
@@ -75,13 +77,19 @@ bindOptional =
 --
 -- >>> Empty <+> Empty
 -- Empty
-(<+>) ::
-  Optional a
-  -> Optional a
-  -> Optional a
-(<+>) =
-  error "todo: Course.Optional#(<+>)"
+(<+>) :: Optional a -> Optional a -> Optional a
+-- (<+>) x y = case x of
+--   Full _ -> x
+--   Empty -> case y of
+--     Full _ -> y
+--     Empty -> Empty
+(<+>) (Full x) _ = Full x
+(<+>) Empty (Full y) = Full y
+(<+>) Empty Empty = Empty
+-- using pattern matching is a cleaner solution than nested case statments
+-- need to have the Brackets around the Arguments to access the Values
 
+-------------------------------------
 -- | Replaces the Full and Empty constructors in an optional.
 --
 -- >>> optional (+1) 0 (Full 8)
@@ -89,13 +97,11 @@ bindOptional =
 --
 -- >>> optional (+1) 0 Empty
 -- 0
-optional ::
-  (a -> b)
-  -> b
-  -> Optional a
-  -> b
-optional =
-  error "todo: Course.Optional#optional"
+optional :: (a -> b) -> b -> Optional a -> b
+optional f _ (Full y) = f y
+optional _ b Empty = b
+-- this is just an easy pattern match
+
 
 applyOptional :: Optional (a -> b) -> Optional a -> Optional b
 applyOptional f a = bindOptional (\f' -> mapOptional f' a) f

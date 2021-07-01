@@ -20,18 +20,15 @@ bindExactlyOne :: (a -> ExactlyOne b) -> ExactlyOne a -> ExactlyOne b
 bindExactlyOne f (ExactlyOne a) = f a
 
 instance P.Functor ExactlyOne where
-  fmap =
-    M.liftM
+  fmap = M.liftM
 
 instance A.Applicative ExactlyOne where
-  (<*>) =
-    M.ap
-  pure =
-    ExactlyOne
+  (<*>) = M.ap
+  pure = ExactlyOne
 
 instance P.Monad ExactlyOne where
-  (>>=) =
-    flip bindExactlyOne
-  return =
-    ExactlyOne
+  (>>=) = flip bindExactlyOne
+  return = ExactlyOne
 
+-- AB: note the type signature of flip
+-- flip :: (a -> b -> c) -> b -> a -> c

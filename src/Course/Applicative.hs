@@ -27,14 +27,10 @@ import qualified Prelude as P(fmap, return, (>>=))
 -- * The law of interchange
 --   `∀u y. u <*> pure y = pure ($ y) <*> u`
 
+-- applicatives are constraints on functors
 class Functor k => Applicative k where
-  pure ::
-    a -> k a
-  -- Pronounced, apply.
-  (<*>) ::
-    k (a -> b)
-    -> k a
-    -> k b
+  pure :: a -> k a
+  (<*>) :: k (a -> b) -> k a -> k b
 
 infixl 4 <*>
 
@@ -45,17 +41,13 @@ infixl 4 <*>
 -- >>> ExactlyOne (+10) <*> ExactlyOne 8
 -- ExactlyOne 18
 instance Applicative ExactlyOne where
-  pure ::
-    a
-    -> ExactlyOne a
-  pure =
-    error "todo: Course.Applicative pure#instance ExactlyOne"
-  (<*>) ::
-    ExactlyOne (a -> b)
-    -> ExactlyOne a
-    -> ExactlyOne b
-  (<*>) =
-    error "todo: Course.Applicative (<*>)#instance ExactlyOne"
+  pure :: a -> ExactlyOne a
+  pure = ExactlyOne
+-- this is how to return the value in the context
+--    error "todo: Course.Applicative pure#instance ExactlyOne"
+  (<*>) :: ExactlyOne (a -> b) -> ExactlyOne a -> ExactlyOne b
+  (<*>) (ExactlyOne f) (ExactlyOne x) = ExactlyOne $ f x
+--    error "todo: Course.Applicative (<*>)#instance ExactlyOne"
 
 -- | Insert into a List.
 --
@@ -64,18 +56,13 @@ instance Applicative ExactlyOne where
 -- >>> (+1) :. (*2) :. Nil <*> 1 :. 2 :. 3 :. Nil
 -- [2,3,4,2,4,6]
 instance Applicative List where
-  pure ::
-    a
-    -> List a
-  pure =
-    error "todo: Course.Applicative pure#instance List"
-  (<*>) ::
-    List (a -> b)
-    -> List a
-    -> List b
-  (<*>) =
-    error "todo: Course.Apply (<*>)#instance List"
-
+  pure :: a -> List a
+  pure = \a -> a :. Nil
+  (<*>) :: List (a -> b) -> List a -> List b
+  (<*>) = \listf -> \lista -> case listf of
+    Nil -> Nil
+    f :. fs -> map f lista ++ (fs <*> lista)
+-- mapping a list of funtions over a list of as
 -- | Insert into an Optional.
 --
 -- prop> \x -> pure x == Full x
@@ -89,17 +76,19 @@ instance Applicative List where
 -- >>> Full (+8) <*> Empty
 -- Empty
 instance Applicative Optional where
-  pure ::
-    a
-    -> Optional a
-  pure =
-    error "todo: Course.Applicative pure#instance Optional"
-  (<*>) ::
-    Optional (a -> b)
-    -> Optional a
-    -> Optional b
-  (<*>) =
-    error "todo: Course.Apply (<*>)#instance Optional"
+  pure :: a -> Optional a
+  pure = Full
+--    error "todo: Course.Applicative pure#instance Optional"
+  (<*>) :: Optional (a -> b) -> Optional a -> Optional b
+  --(<*>) (Full f) (Full x)  = Full (f x)
+  -- (<*>) (Empty) (Full x)  = Empty
+  -- (<*>) (Full f) (Empty)  = Empty
+  -- (<*>) (Empty) (Empty)  = Empty
+  (<*>) f a = bindOptional (`mapOptional` a) f
+  --(`mapOptional` a) is of (a -> b) -> Optional b
+  -- f is Optional (a -> b)
+  --21/7 - i am a bit stumped about how bind and map are combined on this one
+  -- its becuase the functions (a->b) are passed in instead of a on bindOptional
 
 -- | Insert into a constant function.
 --
@@ -119,18 +108,19 @@ instance Applicative Optional where
 -- 15
 --
 -- prop> \x y -> pure x y == x
+
+-- review SKI combinator logic
 instance Applicative ((->) t) where
-  pure ::
-    a
-    -> ((->) t a)
-  pure =
-    error "todo: Course.Applicative pure#((->) t)"
-  (<*>) ::
-    ((->) t (a -> b))
-    -> ((->) t a)
-    -> ((->) t b)
-  (<*>) =
-    error "todo: Course.Apply (<*>)#instance ((->) t)"
+  --pure :: a -> ((->) t a)
+  pure :: a -> (t -> a)
+  pure = const
+  (<*>) :: (t -> a -> b) -> (t -> a) -> t -> b
+  --(<*>) :: ((->) t (a -> b)) -> ((->) t a) -> ((->) t b)
+  (<*>) f x y = f y (x y)
+-- this was completed by naming the input functions
+-- then looking at the function names
+-- sinve it si polymorphic it is generalised across all data types
+-- so gluing the types together is feasible
 
 
 -- | Apply a binary function in the environment.
@@ -152,15 +142,10 @@ instance Applicative ((->) t) where
 --
 -- >>> lift2 (+) length sum (listh [4,5,6])
 -- 18
-lift2 ::
-  Applicative k =>
-  (a -> b -> c)
-  -> k a
-  -> k b
-  -> k c
-lift2 =
-  error "todo: Course.Applicative#lift2"
-
+lift2 :: Applicative k => (a -> b -> c) -> k a -> k b -> k c
+--lift2 f q w = pure $ f <*> q <*> w
+lift2 f ka kb = f <$> ka <*> kb
+-- use sequential application
 -- | Apply a ternary function in the environment.
 -- /can be written using `lift2` and `(<*>)`./
 --
@@ -191,8 +176,9 @@ lift3 ::
   -> k b
   -> k c
   -> k d
-lift3 =
-  error "todo: Course.Applicative#lift3"
+lift3 f ka kb kc = f <$> ka <*> kb <*> kc
+--could be
+--lift3 f ka kb kc = lift2 f ka kb <*> kc
 
 -- | Apply a quaternary function in the environment.
 -- /can be written using `lift3` and `(<*>)`./
@@ -225,16 +211,12 @@ lift4 ::
   -> k c
   -> k d
   -> k e
-lift4 =
-  error "todo: Course.Applicative#lift4"
+lift4 f ka kb kc kd = f <$> ka <*> kb <*> kc <*> kd
+--  error "todo: Course.Applicative#lift4"
 
 -- | Apply a nullary function in the environment.
-lift0 ::
-  Applicative k =>
-  a
-  -> k a
-lift0 =
-  error "todo: Course.Applicative#lift0"
+lift0 :: Applicative k => a -> k a
+lift0 = pure
 
 -- | Apply a unary function in the environment.
 -- /can be written using `lift0` and `(<*>)`./
@@ -247,13 +229,13 @@ lift0 =
 --
 -- >>> lift1 (+1) (1 :. 2 :. 3 :. Nil)
 -- [2,3,4]
-lift1 ::
-  Applicative k =>
-  (a -> b)
-  -> k a
-  -> k b
-lift1 =
-  error "todo: Course.Applicative#lift1"
+lift1 :: Applicative k => (a -> b) -> k a -> k b
+lift1 f x = (pure f) <*> x
+-- lift1 = (<$>)
+-- wrapping the function in pure enables for that function be in the   correct context
+-- all applicatives are functors
+--this is also eff map
+-- lift1 = (<$>)
 
 -- | Apply, discarding the value of the first argument.
 -- Pronounced, right apply.
@@ -273,14 +255,11 @@ lift1 =
 -- prop> \a b c x y z -> (a :. b :. c :. Nil) *> (x :. y :. z :. Nil) == (x :. y :. z :. x :. y :. z :. x :. y :. z :. Nil)
 --
 -- prop> \x y -> Full x *> Full y == Full y
-(*>) ::
-  Applicative k =>
-  k a
-  -> k b
-  -> k b
-(*>) =
-  error "todo: Course.Applicative#(*>)"
+(*>) :: Applicative k => k a -> k b -> k b
 
+(*>)  = lift2 (flip const)
+-- you can use flip const to reverse the inupt
+-- you can also use lift
 -- | Apply, discarding the value of the second argument.
 -- Pronounced, left apply.
 --
@@ -299,13 +278,9 @@ lift1 =
 -- prop> \x y z a b c -> (x :. y :. z :. Nil) <* (a :. b :. c :. Nil) == (x :. x :. x :. y :. y :. y :. z :. z :. z :. Nil)
 --
 -- prop> \x y -> Full x <* Full y == Full x
-(<*) ::
-  Applicative k =>
-  k b
-  -> k a
-  -> k b
-(<*) =
-  error "todo: Course.Applicative#(<*)"
+(<*) ::  Applicative k => k b -> k a -> k b
+(<*) = lift2 (const)
+--  error "todo: Course.Applicative#(<*)"
 
 -- | Sequences a list of structures to a structure of list.
 --
@@ -323,12 +298,19 @@ lift1 =
 --
 -- >>> sequence ((*10) :. (+2) :. Nil) 6
 -- [60,8]
-sequence ::
-  Applicative k =>
-  List (k a)
-  -> k (List a)
-sequence =
-  error "todo: Course.Applicative#sequence"
+sequence :: Applicative k => List (k a) -> k (List a)
+sequence Nil = pure Nil
+sequence (h:.t) = pure (:.) <*> h <*> sequence t
+-- using sequentional operator to unwrap the values
+-- and construct them with pure cons
+-- :t pure (:.)
+-- pure (:.) :: Applicative k => k (t -> List t -> List t)
+--sequence (x:.xs)  =  lift2 (:.) x (sequence xs)
+-- (:.) is a function that goes from a -> List a -> List a
+-- sequence is commonly written for cartesian products of lists of lists
+--
+-- this is a good blod describing sequence
+--http://derekwyatt.org/2012/01/25/haskell-sequence-over-functions-explained/
 
 -- | Replicate an effect a given number of times.
 --
@@ -336,7 +318,7 @@ sequence =
 --
 -- >>> replicateA 4 (ExactlyOne "hi")
 -- ExactlyOne ["hi","hi","hi","hi"]
---
+--s
 -- >>> replicateA 4 (Full "hi")
 -- Full ["hi","hi","hi","hi"]
 --
@@ -348,13 +330,10 @@ sequence =
 --
 -- >>> replicateA 3 ('a' :. 'b' :. 'c' :. Nil)
 -- ["aaa","aab","aac","aba","abb","abc","aca","acb","acc","baa","bab","bac","bba","bbb","bbc","bca","bcb","bcc","caa","cab","cac","cba","cbb","cbc","cca","ccb","ccc"]
-replicateA ::
-  Applicative k =>
-  Int
-  -> k a
-  -> k (List a)
-replicateA =
-  error "todo: Course.Applicative#replicateA"
+replicateA :: Applicative k => Int -> k a -> k (List a)
+replicateA n = sequence . replicate n
+
+-- need to revise on this, it was a copy paste answer
 
 -- | Filter a list with a predicate that produces an effect.
 --
@@ -376,14 +355,19 @@ replicateA =
 -- >>> filtering (const $ True :. True :.  Nil) (1 :. 2 :. 3 :. Nil)
 -- [[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3],[1,2,3]]
 --
-filtering ::
-  Applicative k =>
-  (a -> k Bool)
-  -> List a
-  -> k (List a)
-filtering =
-  error "todo: Course.Applicative#filtering"
+filtering :: Applicative k => (a -> k Bool) -> List a -> k (List a)
+--26/7/20 - i had some issues with this, couldn't think of another way to do it other than unpacking the answer
+-- did some good revision on lift2
+--filtering f a = foldRight (\x -> if f x then else f _ (pure Nil)
+filtering p = foldRight (\a -> lift2 (\b -> if b then (a:.) else id) (p a)) (pure Nil)
+--  error "todo: Course.Applicative#filtering"
+-- this is the answer
+--  foldRight (\a -> lift2 (\b -> if b then (a:.) else id) (p a)) (pure Nil)
+  -- the function it applies is a parameterised version of lift2
+  -- it uses a parameterised version of lift2 to be applid as a function over the list
+  -- if the predicate p a is true, then return a :. else return the identity element
 
+-- with a new (pure Nil) Nil constructor
 -----------------------
 -- SUPPORT LIBRARIES --
 -----------------------

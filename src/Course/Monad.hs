@@ -20,60 +20,63 @@ import qualified Prelude as P((=<<))
 --   `∀f g x. g =<< (f =<< x) ≅ ((g =<<) . f) =<< x`
 class Applicative k => Monad k where
   -- Pronounced, bind.
-  (=<<) ::
-    (a -> k b)
-    -> k a
-    -> k b
+  (=<<) :: (a -> k b) -> k a -> k b
 
 infixr 1 =<<
+
+-- notice the progression of type signatures
+-- (<$>) :: (a -> b)    -> f a -> f b  -- fmap
+-- (<*>) :: f (a -> b)  -> f a -> f b  -- aplicative
+-- (=<<) ::  (a -> f b)  -> f a -> f b -- monad
+
+--monads, applicative and functor are all fuctions
+-- there is a heirarchy of generality
+-- fmap, applicative and monad
+-- these move from generality and speficity
+-- but the applications are more restricted as you increase from fmap to monad
 
 -- | Binds a function on the ExactlyOne monad.
 --
 -- >>> (\x -> ExactlyOne(x+1)) =<< ExactlyOne 2
 -- ExactlyOne 3
 instance Monad ExactlyOne where
-  (=<<) ::
-    (a -> ExactlyOne b)
-    -> ExactlyOne a
-    -> ExactlyOne b
-  (=<<) =
-    error "todo: Course.Monad (=<<)#instance ExactlyOne"
+  (=<<) :: (a -> ExactlyOne b) -> ExactlyOne a -> ExactlyOne b
+  (=<<) f a = f $ runExactlyOne a
+-- completed this unassisted, looks ok
+--    error "todo: Course.Monad (=<<)#instance ExactlyOne"
 
 -- | Binds a function on a List.
 --
 -- >>> (\n -> n :. n :. Nil) =<< (1 :. 2 :. 3 :. Nil)
 -- [1,1,2,2,3,3]
 instance Monad List where
-  (=<<) ::
-    (a -> List b)
-    -> List a
-    -> List b
-  (=<<) =
-    error "todo: Course.Monad (=<<)#instance List"
-
+  (=<<) :: (a -> List b) -> List a -> List b
+  (=<<) = flatMap
+--    error "todo: Course.Monad (=<<)#instance List"
+-- this is flatmap
 -- | Binds a function on an Optional.
 --
 -- >>> (\n -> Full (n + n)) =<< Full 7
 -- Full 14
 instance Monad Optional where
-  (=<<) ::
-    (a -> Optional b)
-    -> Optional a
-    -> Optional b
-  (=<<) =
-    error "todo: Course.Monad (=<<)#instance Optional"
+  (=<<) :: (a -> Optional b) -> Optional a -> Optional b
+  (=<<) f a = bindOptional f a
+  -- 27/7/20
+  -- just using bind optional from the Libraries
+--  bindOptional _ Empty = Empty
+--  bindOptional f (Full a) = f a
+--    error "todo: Course.Monad (=<<)#instance Optional"
 
 -- | Binds a function on the reader ((->) t).
 --
 -- >>> ((*) =<< (+10)) 7
 -- 119
 instance Monad ((->) t) where
-  (=<<) ::
-    (a -> ((->) t b))
-    -> ((->) t a)
-    -> ((->) t b)
-  (=<<) =
-    error "todo: Course.Monad (=<<)#instance ((->) t)"
+  --(=<<) :: (a -> ((->) t b)) -> ((->) t a) -> ((->) t b)
+--  (=<<) :: (a -> (t -> b)) -> (t -> a) -> (t -> b)
+  (=<<) :: (a -> (t -> b)) -> (t -> a) -> t -> b
+-- the brackets were confursing with the type classe
+  (=<<) f x t = f (x t) t
 
 -- | Witness that all things with (=<<) and (<$>) also have (<*>).
 --
@@ -106,14 +109,21 @@ instance Monad ((->) t) where
 --
 -- >>> ((*) <**> (+2)) 3
 -- 15
-(<**>) ::
-  Monad k =>
-  k (a -> b)
-  -> k a
-  -> k b
-(<**>) =
-  error "todo: Course.Monad#(<**>)"
+(<**>) ::  Monad k => k (a -> b) -> k a -> k b
+--(<**>) f a = f >>= \f' -> a >>= \a' -> pure (f' a')
+-- this seems to be binding to get to the value, then wrapping them at the final stage
+-- when working in multiple monadic contexts it can be solved with subsequent lambdas and hole exploration
+--this can be re-written in do notation
+(<**>) f a = do f' <- f
+                a' <- a
+                return (f' a')
+-- pure is not require as this is handled by the do notation.
+-- I find the do notation more elegant
+-- this is the 'I am applicative, destroyer of minds' example
+-- ((*) <**> (+1)) x  becoming x^2 + 1
 
+-- error "todo: Course.Monad#(<**>)"
+-- this is the sequential operator
 infixl 4 <**>
 
 -- | Flattens a combined structure to a single structure.
@@ -129,12 +139,16 @@ infixl 4 <**>
 --
 -- >>> join (+) 7
 -- 14
-join ::
-  Monad k =>
-  k (k a)
-  -> k a
-join =
-  error "todo: Course.Monad#join"
+join :: Monad k => k (k a) -> k a
+join x = (=<<) id x
+-- might need to review this join function
+--  (=<<) :: (a -> k b) -> k a -> k b
+--https://stackoverflow.com/questions/3382210/monad-join-function
+--  error "todo: Course.Monad#join"
+-- note the join function is reasonably important in monads
+-- it can describe bind as
+-- (=<<) m f = join (fmap f m)
+-- https://www.ahnfelt.net/monads-forget-about-bind/
 
 -- | Implement a flipped version of @(=<<)@, however, use only
 -- @join@ and @(<$>)@.
@@ -142,14 +156,10 @@ join =
 --
 -- >>> ((+10) >>= (*)) 7
 -- 119
-(>>=) ::
-  Monad k =>
-  k a
-  -> (a -> k b)
-  -> k b
-(>>=) =
-  error "todo: Course.Monad#(>>=)"
-
+(>>=) :: Monad k => k a -> (a -> k b) -> k b
+(>>=) = flip (=<<)
+  --error "todo: Course.Monad#(>>=)"
+-- monads support bind which is an additional constraint
 infixl 1 >>=
 
 -- | Implement composition within the @Monad@ environment.
@@ -157,14 +167,10 @@ infixl 1 >>=
 --
 -- >>> ((\n -> n :. n :. Nil) <=< (\n -> n+1 :. n+2 :. Nil)) 1
 -- [2,2,3,3]
-(<=<) ::
-  Monad k =>
-  (b -> k c)
-  -> (a -> k b)
-  -> a
-  -> k c
-(<=<) =
-  error "todo: Course.Monad#(<=<)"
+(<=<) :: Monad k => (b -> k c) -> (a -> k b) -> a -> k c
+(<=<) f g a = (=<<) f (g a)
+
+--(>>=) :: k x -> (x -> k y) -> ky
 
 infixr 1 <=<
 

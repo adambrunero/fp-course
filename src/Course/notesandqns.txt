@@ -1,0 +1,140 @@
+12/12/19
+reviewing Validation.hs
+
+
+11/2/20
+Commencing FP Course with Tony Morris
+focus on:
+  - better tested code
+  -
+  - right level of abstraction
+
+What is FP
+  - can always substitute and expression and  a vale and observe no difference
+  - this is called referentially transparent
+
+example summing a list
+  - simple c example using a for loop
+    - you cant do loops in functional programming
+
+starting Examples.hs
+
+- haskell is statically typed
+  - haskell does type inference
+- its a good idea to write type anyway
+
+- good book called refactoring
+
+
+-- testing equivalence, look at agda much greater focus on theoretic proofs
+
+-- data types always start with a capital letter
+
+
+**QN why is a constructor as the same name as the data type and why not?
+
+Definitions
+  - extensionally equivalent - equivalent on a black box level
+
+- starting with lists at 11:30
+
+-- can use pointfree to convert programs
+pointfree.io
+
+
+Day 2
+ - Review of Day 1
+
+-- need to review foldRight
+
+foldleft f z list
+
+var r = z
+for el in list
+  r = f(f, ef)
+return r
+
+
+-- book to read seven sketches in compositionality: An invitation to applied category theory
+
+branch of this course
+https://github.com/data61/fp-course/tree/20200211
+
+
+Day 3
+  Recap
+- reasons to use a separate constructor
+  - usefule to separate namespaces while learning
+  - the reason why parser and P are separate for this course
+
+S
+Applicative
+  - a functor with an added constraint
+    - pure and apply
+
+Monad
+  - an applicative that has bind
+
+- the monad is so famous
+  - because haskell couldn't do IO, then in the 80s someone said you can using the paper on Monads
+
+
+  -- for underscoring always use prefix position
+  -- if its in infix, it may be lookin for a value and a function
+
+
+-- there are more exercises to do on parsers
+-- there is a useful one for JSON parsers
+this is called monad based parsing
+wargonaut is a JSON based parser
+  -- very usefule for analysis
+
+-- we have completed writing a parser, I need to add a few new functions in Mapoptinal
+
+-- replicate is usefule for compounding calcuations via lists
+
+
+-- completed a IO file reader this was useful
+  -- review this in context with other applications.
+a good course to do in your spare time
+https://www.cis.upenn.edu/~cis194/spring13/
+
+-- there is a section about n leg trees
+-- recursive tree structures that grow
+also read Stephen Diehl
+  - what I wish I knew when I learnt haskell.
+--monoids
+--monoids
+
+-- law 1
+--   op x unit == x
+--
+-- law 2 (right Identity)
+--   op unit x == x
+--
+-- law 3 (associativity)
+--   op x (op y z) = op  (op x y) z
+class Monoid a where
+  op :: a -> a -> a
+  unit :: a
+
+instance Monoid Integer where
+  op = (+)
+  unit = 0
+
+instance Monoid anything where
+  op = (++)
+  unit = []
+
+instance Monoid (a -> a) where
+  op = (.)
+  unit = id
+
+you can use foldMap to map a function to a list and concatenate
+
+monoids are instances of semigroups
+
+-- you can collapse a list of data after applying a map to that function
+zipWith ($) [(+ 5),(* 3)] [1,5]
+--something like this
+https://stackoverflow.com/questions/12124004/map-list-of-functions-on-list-in-haskell/12124107

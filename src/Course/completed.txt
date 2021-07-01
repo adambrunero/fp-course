@@ -1,0 +1,25 @@
+ExactlyOne
+Optional
+List
+Functor
+Applicative
+Monad
+FILEIO
+State 1/7/21
+
+Courses to complete..
+Validation
+StateT
+Extend 
+Comonad
+Contravariant
+Compose
+Traversable
+ListZipper
+Parser 
+MoreParser
+JsonParser
+Interactive
+Anagrams
+FastAnagrams
+Cheque

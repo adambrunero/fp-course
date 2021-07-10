@@ -30,17 +30,25 @@ newtype StateT s k a =
       -> k (a, s)
   }
 
+-- Starting on the 10/7/21
+
 -- | Implement the `Functor` instance for @StateT s k@ given a @Functor k@.
 --
 -- >>> runStateT ((+1) <$> (pure 2) :: StateT Int List Int) 0
 -- [(3,0)]
 instance Functor k => Functor (StateT s k) where
-  (<$>) ::
-    (a -> b)
-    -> StateT s k a
-    -> StateT s k b
-  (<$>) =
-    error "todo: Course.StateT (<$>)#instance (StateT s k)"
+  (<$>) :: (a -> b) -> StateT s k a -> StateT s k b
+  (<$>) f sa = StateT (\s -> (\(a, s') -> (f a, s')) <$> runStateT sa s)
+-- in hindsight this was relatively simple but I needed to do this with a tutorial 
+-- i am not sure if this can be implemented in the previous way    
+    --StateT (\s -> let (x, s') = (x, s') in  (f <$> x, s'))
+--    error "todo: Course.StateT (<$>)#instance (StateT s k)"
+
+--The functor instance has the type signature
+--   Pronounced, eff-map.
+--  (<$>) :: (a -> b) -> k a -> k b
+
+
 
 -- | Implement the `Applicative` instance for @StateT s k@ given a @Monad k@.
 --
@@ -59,17 +67,12 @@ instance Functor k => Functor (StateT s k) where
 -- >>> runStateT (StateT (\s -> ((+2), s ++ (1:.Nil)) :. ((+3), s ++ (1:.Nil)) :. Nil) <*> (StateT (\s -> (2, s ++ (2:.Nil)) :. Nil))) (0:.Nil)
 -- [(4,[0,1,2]),(5,[0,1,2])]
 instance Monad k => Applicative (StateT s k) where
-  pure ::
-    a
-    -> StateT s k a
-  pure =
-    error "todo: Course.StateT pure#instance (StateT s k)"
-  (<*>) ::
-    StateT s k (a -> b)
-    -> StateT s k a
-    -> StateT s k b
+  pure :: a -> StateT s k a
+  pure a = StateT (\s -> pure (a, s))
+  (<*>) :: StateT s k (a -> b) -> StateT s k a -> StateT s k b
   (<*>) =
     error "todo: Course.StateT (<*>)#instance (StateT s k)"
+-- I am a bit tired, so stopping here
 
 -- | Implement the `Monad` instance for @StateT s k@ given a @Monad k@.
 -- Make sure the state value is passed through in `bind`.

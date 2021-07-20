@@ -42,6 +42,12 @@ instance (Applicative f, Applicative g) =>
 -- (<*>) :: k (a -> b) -> k a -> k b
 -- in this case it would be Compose f
 -- (<*>) :: Compose f g (a -> b) -> Compose f g a -> Compose f g b
+
+
+-- monad can't be done as it is the highest level of specificity, 
+--all monads are applicatives, all applicatives are functors, there fore if it could be done the others would need to be implementable too
+-- applicative is a superclass of monad, and functor is a superclass of applicative. 
+-- if we can implement at least two, then the only one would have to be Monad. 
 instance (Monad f, Monad g) =>
   Monad (Compose f g) where
 -- Implement the (=<<) function for a Monad instance for Compose
@@ -51,8 +57,12 @@ instance (Monad f, Monad g) =>
 -- Note that the inner g is Contravariant but the outer f is
 -- Functor. We would not be able to write an instance if both were
 -- Contravariant; why not?
-instance (Functor f, Contravariant g) =>
-  Contravariant (Compose f g) where
--- Implement the (>$<) function for a Contravariant instance for Compose
-  (>$<) =
-    error "todo: Course.Compose (>$<)#instance (Compose f g)"
+-- instance (Functor f, Contravariant g) =>
+--   Contravariant (Compose f g) where
+-- -- Implement the (>$<) function for a Contravariant instance for Compose
+-- -- (>$<) :: (b -> a) -> Compose f g a -> Compose f g b
+--   (>$<) b2a (Compose fga) = Compose _todo
+-- --    error "todo: Course.Compose (>$<)#instance (Compose f g)"
+-- -- (>$<) :: Contravariant k => (b -> a) -> k a -> k b
+
+-- this exercise isn't in the answers, not sure if it is possible. 

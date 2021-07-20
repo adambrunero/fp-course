@@ -6,6 +6,7 @@ Applicative
 Monad
 FILEIO
 State 1/7/21
+Compose - started 20/7/21 finished on the same day
 
 Courses to complete..
 Validation
@@ -13,7 +14,6 @@ StateT - a bit tough, I am going to compose and traversable
 Extend 
 Comonad
 Contravariant
-Compose - started 20/7/21
 Traversable
 ListZipper
 Parser 

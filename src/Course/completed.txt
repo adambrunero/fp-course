@@ -9,11 +9,11 @@ State 1/7/21
 
 Courses to complete..
 Validation
-StateT
+StateT - a bit tough, I am going to compose and traversable
 Extend 
 Comonad
 Contravariant
-Compose
+Compose - started 20/7/21
 Traversable
 ListZipper
 Parser 

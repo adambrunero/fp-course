@@ -97,6 +97,7 @@ bindOptional f (Full a) = f a
 --
 -- >>> optional (+1) 0 Empty
 -- 0
+-- this is the same as foldright for optional 
 optional :: (a -> b) -> b -> Optional a -> b
 optional f _ (Full y) = f y
 optional _ b Empty = b

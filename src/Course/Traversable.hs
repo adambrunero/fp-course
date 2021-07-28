@@ -92,20 +92,29 @@ instance (Traversable f, Traversable g) => Traversable (Product f g) where
 --    error "todo: Course.Traversable traverse#instance (Product f g)"
 -- traverse :: (a -> k b) -> Product f g a -> k (Product f g b)
 
-
+-- re-commencing 29/7/21
 -- | The `Coproduct` data type contains one value from either of the two type constructors.
+-- this is like either, a value of one type constructor or a value of another
+-- InL stands for inject to the left
 data Coproduct f g a =
-  InL (f a)
+  InL (f a) 
   | InR (g a) deriving (Show, Eq)
 
-instance (Functor f, Functor g) =>
-  Functor (Coproduct f g) where
+instance (Functor f, Functor g) => Functor (Coproduct f g) where
 -- Implement the (<$>) function for a Functor instance for Coproduct
-  (<$>) =
-    error "todo: Course.Traversable (<$>)#instance (Coproduct f g)"
+  (<$>) f (InL _fa)= InL (f <$> _fa)
+  (<$>) f (InR _ga)= InR (f <$> _ga)
 
-instance (Traversable f, Traversable g) =>
-  Traversable (Coproduct f g) where
+--    error "todo: Course.Traversable (<$>)#instance (Coproduct f g)"
+-- (<$>) :: (a -> b) -> Coproduct f g a -> Coproduct f g b
+-- here the type constructor InL is used to return the f and _fa into an f g b
+-- InL :: forall (f :: * -> *) (g :: * -> *) a. f a -> Coproduct f g a
+
+instance (Traversable f, Traversable g) => Traversable (Coproduct f g) where
 -- Implement the traverse function for a Traversable instance for Coproduct
-  traverse =
-    error "todo: Course.Traversable traverse#instance (Coproduct f g)"
+  traverse f (InL _fa) = sequenceA $ InL (f <$> _fa)
+  traverse f (InR _ga) = sequenceA $ InR (f <$> _ga)
+--    error "todo: Course.Traversable traverse#instance (Coproduct f g)"
+-- traverse :: (a -> k b) -> Coproduct f g a -> k (Coproduct f g b)
+-- i finished this one un-assisted first go
+-- I am starting to identify the patterns in the type signature. 

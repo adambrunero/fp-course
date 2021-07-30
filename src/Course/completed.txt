@@ -8,6 +8,8 @@ Monad
 FILEIO
 State 1/7/21
 Compose - started 20/7/21 finished on the same day
+Traversable - started 21/7/21 - finished 29/7/21
+Parser has been completed earlier during the FP course
 
 Courses to complete..
 
@@ -15,9 +17,7 @@ StateT - a bit tough, I am going to compose and traversable
 Extend 
 Comonad
 Contravariant
-Traversable - started 21/7/21
 ListZipper
-Parser 
 MoreParser
 JsonParser1
 Interactive

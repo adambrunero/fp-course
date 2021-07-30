@@ -70,9 +70,11 @@ instance Monad k => Applicative (StateT s k) where
   pure :: a -> StateT s k a
   pure a = StateT (\s -> pure (a, s))
   (<*>) :: StateT s k (a -> b) -> StateT s k a -> StateT s k b
-  (<*>) =
-    error "todo: Course.StateT (<*>)#instance (StateT s k)"
--- I am a bit tired, so stopping here
+  (<*>) sab sa = StateT (\s ->
+    (\(ab, s') -> (\(a, s'') -> (ab a, s'')) <$> runStateT sa s') =<< runStateT sab s)
+
+-- this monad was a bit problematic as you have to unwrap both values to 
+-- apply the a -> b on the a
 
 -- | Implement the `Monad` instance for @StateT s k@ given a @Monad k@.
 -- Make sure the state value is passed through in `bind`.
@@ -83,93 +85,77 @@ instance Monad k => Applicative (StateT s k) where
 -- >>> let modify f = StateT (\s -> pure ((), f s)) in runStateT (modify (+1) >>= \() -> modify (*2)) 7
 -- ((),16)
 instance Monad k => Monad (StateT s k) where
-  (=<<) ::
-    (a -> StateT s k b)
-    -> StateT s k a
-    -> StateT s k b
-  (=<<) =
-    error "todo: Course.StateT (=<<)#instance (StateT s k)"
+  (=<<) :: (a -> StateT s k b) -> StateT s k a -> StateT s k b
+  (=<<) f sa = StateT (\s -> (\(a, s') -> runStateT (f a) s' ) =<< runStateT  sa s )
+
+--resuming on the 30/7/21
+-- still plodding through these. 
+--    error "todo: Course.StateT (=<<)#instance (StateT s k)"
 
 -- | A `State'` is `StateT` specialised to the `ExactlyOne` functor.
-type State' s a =
-  StateT s ExactlyOne a
+type State' s a = StateT s ExactlyOne a
 
 -- | Provide a constructor for `State'` values
 --
 -- >>> runStateT (state' $ runState $ put 1) 0
 -- ExactlyOne ((),1)
-state' ::
-  (s -> (a, s))
-  -> State' s a
-state' =
-  error "todo: Course.StateT#state'"
+state' :: (s -> (a, s)) -> State' s a
+state' f = StateT (\s -> ExactlyOne (f s))
+--  error "todo: Course.StateT#state'"
+-- this was relatively straightforward with hole fits. 
 
 -- | Provide an unwrapper for `State'` values.
 --
 -- >>> runState' (state' $ runState $ put 1) 0
 -- ((),1)
-runState' ::
-  State' s a
-  -> s
-  -> (a, s)
-runState' =
-  error "todo: Course.StateT#runState'"
+runState' :: State' s a -> s -> (a, s)
+runState' sa  = runExactlyOne . runStateT sa --this is the pointfree representaiton
+
+--runState' sa  s = runExactlyOne (runStateT sa s)
+--  error "todo: Course.StateT#runState'"
 
 -- | Run the `StateT` seeded with `s` and retrieve the resulting state.
 --
 -- >>> execT (StateT $ \s -> Full ((), s + 1)) 2
 -- Full 3
-execT ::
-  Functor k =>
-  StateT s k a
-  -> s
-  -> k s
-execT =
-  error "todo: Course.StateT#execT"
+execT :: Functor k => StateT s k a -> s -> k s
+execT sa s = snd <$> (runStateT sa s) -- since its a functor, you can map snd across to get the second value
+--  error "todo: Course.StateT#execT"
 
 -- | Run the `State'` seeded with `s` and retrieve the resulting state.
 --
 -- >>> exec' (state' $ \s -> ((), s + 1)) 2
 -- 3
-exec' ::
-  State' s a
-  -> s
-  -> s
-exec' =
-  error "todo: Course.StateT#exec'"
+exec' :: State' s a -> s -> s
+exec' sa =  snd . runState' sa -- now in pointfree
+
+--exec' sa s =  snd (runState' sa s)
+--  error "todo: Course.StateT#exec'"
 
 -- | Run the `StateT` seeded with `s` and retrieve the resulting value.
 --
 -- >>> evalT (StateT $ \s -> Full (even s, s + 1)) 2
 -- Full True
-evalT ::
-  Functor k =>
-  StateT s k a
-  -> s
-  -> k a
-evalT =
-  error "todo: Course.StateT#evalT"
+evalT :: Functor k => StateT s k a -> s -> k a
+evalT sa s = fst <$> (runStateT sa s) -- this is similar to execT
+--  error "todo: Course.StateT#evalT"
 
 -- | Run the `State'` seeded with `s` and retrieve the resulting value.
 --
 -- >>> eval' (state' $ \s -> (even s, s + 1)) 5
 -- False
-eval' ::
-  State' s a
-  -> s
-  -> a
-eval' =
-  error "todo: Course.StateT#eval'"
+eval' :: State' s a -> s -> a
+eval' sa  = fst . runState' sa 
+--  error "todo: Course.StateT#eval'"
 
 -- | A `StateT` where the state also distributes into the produced value.
 --
 -- >>> (runStateT (getT :: StateT Int List Int) 3)
 -- [(3,3)]
-getT ::
-  Applicative k =>
-  StateT s k s
-getT =
-  error "todo: Course.StateT#getT"
+getT :: Applicative k => StateT s k s
+getT = StateT (\s -> pure (s, s))
+-- need to apply pure to put s in the applicative context
+--  error "todo: Course.StateT#getT"
 
 -- | A `StateT` where the resulting state is seeded with the given value.
 --
@@ -178,12 +164,10 @@ getT =
 --
 -- >>> runStateT (putT 2 :: StateT Int List ()) 0
 -- [((),2)]
-putT ::
-  Applicative k =>
-  s
-  -> StateT s k ()
-putT =
-  error "todo: Course.StateT#putT"
+putT :: Applicative k => s -> StateT s k ()
+putT x = StateT (\s -> pure((), x))
+--  error "todo: Course.StateT#putT"
+-- I am progressing well with StateT, this is a good place to stop
 
 -- | Remove all duplicate elements in a `List`.
 --

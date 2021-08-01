@@ -165,7 +165,7 @@ getT = StateT (\s -> pure (s, s))
 -- >>> runStateT (putT 2 :: StateT Int List ()) 0
 -- [((),2)]
 putT :: Applicative k => s -> StateT s k ()
-putT x = StateT (\s -> pure((), x))
+putT x = StateT (\_ -> pure((), x))
 --  error "todo: Course.StateT#putT"
 -- I am progressing well with StateT, this is a good place to stop
 
@@ -174,12 +174,12 @@ putT x = StateT (\s -> pure((), x))
 -- /Tip:/ Use `filtering` and `State'` with a @Data.Set#Set@.
 --
 -- prop> \xs -> distinct' xs == distinct' (flatMap (\x -> x :. x :. Nil) xs)
-distinct' ::
-  Ord a =>
-  List a
-  -> List a
-distinct' =
-  error "todo: Course.StateT#distinct'"
+distinct' :: Ord a => List a -> List a
+distinct' xs =  eval' ( filtering (\x -> state' (\s -> (S.notMember x s, S.insert x s ))) xs ) S.empty
+-- this was just a direct grab from State with an update to state'
+--  error "todo: Course.StateT#distinct'"
+--distinct xs = eval ( filtering (\x -> State (\s -> (S.notMember x s, S.insert x s ))) xs ) S.empty
+
 
 -- | Remove all duplicate elements in a `List`.
 -- However, if you see a value greater than `100` in the list,
@@ -192,12 +192,18 @@ distinct' =
 --
 -- >>> distinctF $ listh [1,2,3,2,1,101]
 -- Empty
-distinctF ::
-  (Ord a, Num a) =>
-  List a
-  -> Optional (List a)
-distinctF =
-  error "todo: Course.StateT#distinctF"
+distinctF :: (Ord a, Num a) => List a -> Optional (List a)
+distinctF xs = evalT (filtering 
+  (\a -> StateT (\s -> 
+    if a > 100 
+    then Empty -- as soon as empty is seen the computation short ciruits and returns Empty
+    else Full (S.notMember a s, S.insert a s ))) 
+  xs) S.empty
+
+-- this is powerful becuase it combines monadic operations, 
+-- it combines imperative logic in functional programming.
+-- this is like an imperative short circuiting monad.  
+-- with StateT we now have a function that has state and optionality
 
 -- | An `OptionalT` is a functor of an `Optional` value.
 data OptionalT k a =
@@ -206,17 +212,17 @@ data OptionalT k a =
       k (Optional a)
   }
 
+-- this is the optional Monad transformer
 -- | Implement the `Functor` instance for `OptionalT k` given a Functor k.
 --
 -- >>> runOptionalT $ (+1) <$> OptionalT (Full 1 :. Empty :. Nil)
 -- [Full 2,Empty]
 instance Functor k => Functor (OptionalT k) where
-  (<$>) ::
-    (a -> b)
-    -> OptionalT k a
-    -> OptionalT k b
-  (<$>) =
-    error "todo: Course.StateT (<$>)#instance (OptionalT k)"
+  (<$>) :: (a -> b) -> OptionalT k a -> OptionalT k b
+  (<$>) f oa = OptionalT ((f <$>) <$> runOptionalT oa)
+
+-- stopping here, I am going will, but need to think about the monad transformers a bit more. 
+--    error "todo: Course.StateT (<$>)#instance (OptionalT k)"
 
 -- | Implement the `Applicative` instance for `OptionalT k` given a Monad k.
 --
@@ -243,18 +249,14 @@ instance Functor k => Functor (OptionalT k) where
 -- >>> runOptionalT $ OptionalT (Full (+1) :. Full (+2) :. Nil) <*> OptionalT (Full 1 :. Empty :. Nil)
 -- [Full 2,Empty,Full 3,Empty]
 instance Monad k => Applicative (OptionalT k) where
-  pure ::
-    a
-    -> OptionalT k a
-  pure =
-    error "todo: Course.StateT pure#instance (OptionalT k)"
+  pure :: a -> OptionalT k a
+  pure = OptionalT . pure . pure
+--    error "todo: Course.StateT pure#instance (OptionalT k)"
 
-  (<*>) ::
-    OptionalT k (a -> b)
-    -> OptionalT k a
-    -> OptionalT k b
-  (<*>) =
-    error "todo: Course.StateT (<*>)#instance (OptionalT k)"
+  (<*>) :: OptionalT k (a -> b) -> OptionalT k a -> OptionalT k b
+  (<*>) oab oa = OptionalT (lift2 (<*>) (runOptionalT oab) (runOptionalT oa))
+  --  error "todo: Course.StateT (<*>)#instance (OptionalT k)"
+-- this is similar to compose, as we are composing functors 
 
 -- | Implement the `Monad` instance for `OptionalT k` given a Monad k.
 --

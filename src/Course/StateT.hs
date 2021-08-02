@@ -263,12 +263,20 @@ instance Monad k => Applicative (OptionalT k) where
 -- >>> runOptionalT $ (\a -> OptionalT (Full (a+1) :. Full (a+2) :. Nil)) =<< OptionalT (Full 1 :. Empty :. Nil)
 -- [Full 2,Full 3,Empty]
 instance Monad k => Monad (OptionalT k) where
-  (=<<) ::
-    (a -> OptionalT k b)
-    -> OptionalT k a
-    -> OptionalT k b
-  (=<<) =
-    error "todo: Course.StateT (=<<)#instance (OptionalT k)"
+  (=<<) :: (a -> OptionalT k b) -> OptionalT k a -> OptionalT k b
+  (=<<) f oa = let
+    g (Full a) = 
+      runOptionalT (f a)
+    g Empty = 
+      pure Empty
+    in OptionalT (g =<< runOptionalT oa)
+     
+-- this solution uses pattern matching to define the cases for the bind operatoin
+-- i think it is an elegant way to explain what is happening. 
+-- the monad for optionalT just checks for something that has either a value or an empty, 
+-- if it has an empty it bails out
+
+--    error "todo: Course.StateT (=<<)#instance (OptionalT k)"
 
 -- | A `Logger` is a pair of a list of log values (`[l]`) and an arbitrary value (`a`).
 data Logger l a =
@@ -280,12 +288,9 @@ data Logger l a =
 -- >>> (+3) <$> Logger (listh [1,2]) 3
 -- Logger [1,2] 6
 instance Functor (Logger l) where
-  (<$>) ::
-    (a -> b)
-    -> Logger l a
-    -> Logger l b
-  (<$>) =
-    error "todo: Course.StateT (<$>)#instance (Logger l)"
+  (<$>) :: (a -> b) -> Logger l a -> Logger l b
+  (<$>) f (Logger ll aa) = Logger  ll (f aa) 
+--    error "todo: Course.StateT (<$>)#instance (Logger l)"
 
 -- | Implement the `Applicative` instance for `Logger`.
 --
@@ -295,18 +300,14 @@ instance Functor (Logger l) where
 -- >>> Logger (listh [1,2]) (+7) <*> Logger (listh [3,4]) 3
 -- Logger [1,2,3,4] 10
 instance Applicative (Logger l) where
-  pure ::
-    a
-    -> Logger l a
-  pure =
-    error "todo: Course.StateT pure#instance (Logger l)"
+  pure :: a -> Logger l a
+  pure = Logger Nil 
+-- logger is a pair with the first element being a monoid
+--    error "todo: Course.StateT pure#instance (Logger l)"
 
-  (<*>) ::
-    Logger l (a -> b)
-    -> Logger l a
-    -> Logger l b
-  (<*>) =
-    error "todo: Course.StateT (<*>)#instance (Logger l)"
+  (<*>) :: Logger l (a -> b) -> Logger l a -> Logger l b
+  (<*>) (Logger l0 a2b) (Logger l1 a1) = Logger (l0 ++ l1) (a2b a1)
+-- this is relatively straightforward
 
 -- | Implement the `Monad` instance for `Logger`.
 -- The `bind` implementation must append log values to maintain associativity.
@@ -314,23 +315,22 @@ instance Applicative (Logger l) where
 -- >>> (\a -> Logger (listh [4,5]) (a+3)) =<< Logger (listh [1,2]) 3
 -- Logger [1,2,4,5] 6
 instance Monad (Logger l) where
-  (=<<) ::
-    (a -> Logger l b)
-    -> Logger l a
-    -> Logger l b
-  (=<<) =
-    error "todo: Course.StateT (=<<)#instance (Logger l)"
+  (=<<) :: (a -> Logger l b) -> Logger l a -> Logger l b
+  (=<<) alb (Logger l1 a1) = let 
+    (Logger l2 b2) = (alb a1) 
+    in Logger (l1 ++ l2) b2
+
+-- performing the bind operation manually using the let - in notation
+-- this was done un-assisted and with confidence
 
 -- | A utility function for producing a `Logger` with one log value.
 --
 -- >>> log1 1 2
 -- Logger [1] 2
-log1 ::
-  l
-  -> a
-  -> Logger l a
-log1 =
-  error "todo: Course.StateT#log1"
+log1 :: l -> a -> Logger l a
+log1 l a = Logger (l :. Nil) a
+-- this was easy just create a singleton list manually
+--  error "todo: Course.StateT#log1"
 
 -- | Remove all duplicate integers from a list. Produce a log as you go.
 -- If there is an element above 100, then abort the entire computation and produce no result.
@@ -346,13 +346,43 @@ log1 =
 --
 -- >>> distinctG $ listh [1,2,3,2,6,106]
 -- Logger ["even number: 2","even number: 2","even number: 6","aborting > 100: 106"] Empty
-distinctG ::
-  (Integral a, Show a) =>
-  List a
-  -> Logger Chars (Optional (List a))
-distinctG =
-  error "todo: Course.StateT#distinctG"
+distinctG :: (Integral a, Show a) => List a -> Logger Chars (Optional (List a))
+distinctG xs = runOptionalT (evalT (filtering 
+  (\a -> StateT (\s -> 
+--    if a > 100 
+--    then Empty -- as soon as empty is seen the computation short ciruits and returns Empty
+--    else (\b -> 
+ --     if even b 
+  --    then Logger ()Full (S.notMember a s, S.insert a s )))
+  --    else  
+  OptionalT (
+    if a > 100 
+    then log1 ("aborting > 100: " ++ show' a) Empty
+    else (
+      if even a
+      then log1 ("even number: " ++ show' a) 
+      else pure) (Full (S.notMember a s, S.insert a s )) -- this is inlined to reduce code duplication
+  )
+    ))
+  xs) S.empty)
 
+-- three fuynctions
+-- StateT to record State
+-- OptionalT to short circuit out with an Empty
+-- and Logging
+-- this was a very neat solution and I was close to the answer
+-- instead of creating a logger type, I just needed to log1 each time it operated
+-- I needed to just add an optionalT and keep the eval
+
+--  error "todo: Course.StateT#distinctG"
+
+-- template this based in distintF
+-- distinctF xs = evalT (filtering 
+--   (\a -> StateT (\s -> 
+--     if a > 100 
+--     then Empty -- as soon as empty is seen the computation short ciruits and returns Empty
+--     else Logger ()Full (S.notMember a s, S.insert a s ))) 
+--   xs) S.empty
 onFull ::
   Applicative k =>
   (t -> k (Optional a))

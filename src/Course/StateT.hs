@@ -349,12 +349,6 @@ log1 l a = Logger (l :. Nil) a
 distinctG :: (Integral a, Show a) => List a -> Logger Chars (Optional (List a))
 distinctG xs = runOptionalT (evalT (filtering 
   (\a -> StateT (\s -> 
---    if a > 100 
---    then Empty -- as soon as empty is seen the computation short ciruits and returns Empty
---    else (\b -> 
- --     if even b 
-  --    then Logger ()Full (S.notMember a s, S.insert a s )))
-  --    else  
   OptionalT (
     if a > 100 
     then log1 ("aborting > 100: " ++ show' a) Empty

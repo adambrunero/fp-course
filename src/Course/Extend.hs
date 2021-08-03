@@ -24,17 +24,17 @@ class Functor k => Extend k where
 
 infixr 1 <<=
 
+-- 3/8/21- starting unassisted on the Extend type class
+
 -- | Implement the @Extend@ instance for @ExactlyOne@.
 --
 -- >>> id <<= ExactlyOne 7
 -- ExactlyOne (ExactlyOne 7)
 instance Extend ExactlyOne where
-  (<<=) ::
-    (ExactlyOne a -> b)
-    -> ExactlyOne a
-    -> ExactlyOne b
-  (<<=) =
-    error "todo: Course.Extend (<<=)#instance ExactlyOne"
+  (<<=) :: (ExactlyOne a -> b) -> ExactlyOne a -> ExactlyOne b
+  (<<=) f a = ExactlyOne $ f a 
+-- this was straightforward. 
+--    error "todo: Course.Extend (<<=)#instance ExactlyOne"
 
 -- | Implement the @Extend@ instance for @List@.
 --
@@ -47,12 +47,11 @@ instance Extend ExactlyOne where
 -- >>> reverse <<= ((1 :. 2 :. 3 :. Nil) :. (4 :. 5 :. 6 :. Nil) :. Nil)
 -- [[[4,5,6],[1,2,3]],[[4,5,6]]]
 instance Extend List where
-  (<<=) ::
-    (List a -> b)
-    -> List a
-    -> List b
-  (<<=) =
-    error "todo: Course.Extend (<<=)#instance List"
+  (<<=) :: (List a -> b) -> List a -> List b
+  (<<=) lab (x :. xs) = lab (x :. xs) :. (lab <<= xs) 
+  (<<=) _ Nil = Nil
+-- this was the same as the answers and worked out unassisted. 
+--    error "todo: Course.Extend (<<=)#instance List"
 
 -- | Implement the @Extend@ instance for @Optional@.
 --
@@ -62,12 +61,13 @@ instance Extend List where
 -- >>> id <<= Empty
 -- Empty
 instance Extend Optional where
-  (<<=) ::
-    (Optional a -> b)
-    -> Optional a
-    -> Optional b
-  (<<=) =
-    error "todo: Course.Extend (<<=)#instance Optional"
+  (<<=) :: (Optional a -> b) -> Optional a -> Optional b
+  (<<=) _ Empty =  Empty 
+  (<<=) oab oa =  Full (oab oa) 
+-- I found the pattern match answer easier than the solutions
+-- which was (oab . Full) <$> oa  
+-- this relies on the fact that Full <$> Empty is equal to empty
+--    error "todo: Course.Extend (<<=)#instance Optional"
 
 -- | Duplicate the functor using extension.
 --
@@ -82,9 +82,10 @@ instance Extend Optional where
 --
 -- >>> cojoin Empty
 -- Empty
-cojoin ::
-  Extend k =>
-  k a
-  -> k (k a)
-cojoin =
-  error "todo: Course.Extend#cojoin"
+cojoin :: Extend k => k a -> k (k a)
+cojoin = (<<=) id 
+-- I peeked at the answers for this which was a shame
+-- the answer was given in the solutions of the previous questions
+-- this is a sign I am getting tired. 
+-- time to pack it in for the night 
+--  error "todo: Course.Extend#cojoin"

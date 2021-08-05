@@ -26,20 +26,16 @@ class Extend k => Comonad k where
 -- >>> copure (ExactlyOne 7)
 -- 7
 instance Comonad ExactlyOne where
-  copure ::
-    ExactlyOne a
-    -> a
-  copure =
-    error "todo: Course.Comonad copure#instance ExactlyOne"
+  copure :: ExactlyOne a -> a
+  copure (ExactlyOne a) = a 
+-- since exactly one is exactly one value, this is an easy pattern match
+
+--    error "todo: Course.Comonad copure#instance ExactlyOne"
 
 -- | Witness that all things with (<<=) and copure also have (<$>).
 --
 -- >>> (+10) <$$> ExactlyOne 7
 -- ExactlyOne 17
-(<$$>) ::
-  Comonad k =>
-  (a -> b)
-  -> k a
-  -> k b
-(<$$>) =
-  error "todo: Course.Comonad#(<$>)"
+(<$$>) :: Comonad k => (a -> b) -> k a -> k b
+(<$$>) fab ka = (fab . copure) <<= ka
+--  error "todo: Course.Comonad#(<$>)"

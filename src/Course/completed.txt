@@ -11,12 +11,12 @@ Compose - started 20/7/21 finished on the same day
 Traversable - started 21/7/21 - finished 29/7/21
 Parser has been completed earlier during the FP course
 StateT - a bit tough, I am going to compose and traversable, finished 2/8/21
+Extend 3/8/21
+Comonad 5/8/21 - this was relatively straightforward
 
 Courses to complete..
 
 
-Extend 
-Comonad
 Contravariant
 ListZipper
 MoreParser

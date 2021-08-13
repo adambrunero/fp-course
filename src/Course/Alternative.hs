@@ -37,12 +37,8 @@ import qualified Prelude as P(fmap, return, (>>=))
 -- laws relating the Applicative and Alternative are discussed here:
 -- https://wiki.haskell.org/Typeclassopedia#Laws_6
 class Applicative k => Alternative k where
-  zero ::
-    k a
-  (<|>) ::
-    k a
-    -> k a
-    -> k a
+  zero :: k a
+  (<|>) :: k a -> k a -> k a
 
 infixl 3 <|>
 
@@ -57,16 +53,19 @@ infixl 3 <|>
 -- >>> Full 3 <|> Full 4
 -- Full 3
 instance Alternative Optional where
-  zero ::
-    Optional a
-  zero =
-    error "todo: Course.Alternative zero#instance Optional"
-  (<|>) ::
-    Optional a
-    -> Optional a
-    -> Optional a
-  (<|>) =
-    error "todo: Course.Alternative (<|>)#instance Optional"
+  zero :: Optional a
+  zero = Empty
+--    error "todo: Course.Alternative zero#instance Optional"
+  (<|>) :: Optional a -> Optional a -> Optional a
+  (<|>) Empty Empty = Empty
+  (<|>) (Full oa1)  Empty =  Full oa1
+  (<|>) Empty (Full oa2) = Full oa2
+  (<|>) (Full oa1) _ = Full oa1
+
+-- 12/8/21 - This was an easy pattern match
+-- Empty is the zero element of Optional
+--  (<|>) = 
+--    error "todo: Course.Alternative (<|>)#instance Optional"
 
 -- | Append the lists.
 -- This instance views lists as a non-deterministic choice between elements,
@@ -81,16 +80,15 @@ instance Alternative Optional where
 -- >>> 3 :. 4 :. 5 :. Nil <|> 6 :. 7 :. 8 :. Nil
 -- [3,4,5,6,7,8]
 instance Alternative List where
-  zero ::
-    List a
-  zero =
-    error "todo: Course.Alternative zero#instance List"
-  (<|>) ::
-    List a
-    -> List a
-    -> List a
-  (<|>) =
-    error "todo: Course.Alternative (<|>)#instance List"
+  zero :: List a
+  zero = Nil -- just load the empty list
+--     error "todo: Course.Alternative zero#instance List"
+  (<|>) :: List a -> List a -> List a
+  (<|>) Nil Nil = Nil
+  (<|>) Nil lb = lb
+  (<|>) la Nil = la
+  (<|>) la lb = la ++ lb
+--    error "todo: Course.Alternative (<|>)#instance List"
 
 -- | Choose the first succeeding parser
 --
@@ -108,14 +106,10 @@ instance Alternative List where
 -- >>> parse (constantParser UnexpectedEof <|> valueParser 'v') "abc"
 -- Result >abc< 'v'
 instance Alternative Parser where
-  zero ::
-    Parser a
-  zero =
+  zero :: Parser a
+  zero = 
     error "todo: Course.Alternative zero#instance Parser"
-  (<|>) ::
-    Parser a
-    -> Parser a
-    -> Parser a
+  (<|>) :: Parser a -> Parser a -> Parser a
   (<|>) =
     error "todo: Course.Alternative (<|>)#instance Parser"
 

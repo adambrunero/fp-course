@@ -6,7 +6,8 @@ module Course.Contravariant where
 
 import Course.Core
 import Course.Applicative
-
+--import Course.Monad
+--import Course.List
 -- | A 'Predicate' is usually some kind of test about a
 -- thing. Example: a 'Predicate Integer' says "give me an 'Integer'"
 -- and I'll answer 'True' or 'False'.
@@ -64,7 +65,6 @@ instance Contravariant Predicate where
   (>$<) :: (b -> a) -> Predicate a -> Predicate b
   (>$<) b2a (Predicate abool)  = Predicate (abool . b2a)
 
---  (>$<) b2a pa = _todo (let  x = (runSwappedArrow b2a,  runPredicate pa)  in x _todo2 ) 
 
 -- Predicate a, takes an a and returns True|False
 --     error "todo: Course.Contravariant (>$<)#instance Predicate"
@@ -77,6 +77,8 @@ instance Contravariant Comparison where
   (>$<) :: (b -> a) -> Comparison a -> Comparison b
   (>$<) b2a (Comparison aao) = Comparison (\x y -> aao (b2a x) (b2a y))
 -- that took a lot longer than expected, not sure why, must be tireed.   
+-- i think i created a partial evaluation with aao . b2a with threw out
+-- the type signatures for a while. 
 
 -- | The kind of the argument to 'Contravariant' is @Type -> Type@, so
 -- our '(>$<)' only works on the final type argument. The
@@ -86,22 +88,23 @@ instance Contravariant Comparison where
 -- >>> runSwappedArrow (length >$< SwappedArrow (+10)) "hello"
 -- 15
 instance Contravariant (SwappedArrow t) where
-  (>$<) ::
-    (b -> a)
-    -> SwappedArrow x a
-    -> SwappedArrow x b
-  (>$<) =
-    error "todo: Course.Contravariant (>$<)#instance SwappedArrow"
-
+  (>$<) :: (b -> a) -> SwappedArrow x a -> SwappedArrow x b
+  (>$<) b2a (SwappedArrow xa)= SwappedArrow (xa . b2a)
+-- this was just an exercise of filling the arguments with hole driven development
+--    error "todo: Course.Contravariant (>$<)#instance SwappedArrow"
+-- the "hello needs to be cast into a list to work"
+-- runSwappedArrow (length >$< SwappedArrow (+10)) $ listh "hello"
+-- 15
 
 -- | If we give our 'Contravariant' an @a@, then we can "accept" any
 -- @b@ by ignoring it.
 --
 -- prop> \x -> runPredicate (3 >$ Predicate odd) x == True
-(>$) ::
-  Contravariant k =>
-  a
-  -> k a
-  -> k b
-(>$) =
-  error "todo: Course.Contravariant#(>$)"
+(>$) :: Contravariant k => a -> k a -> k b
+(>$) = (>$<) . const
+
+-- again this was relatively straightforward, I knew it had something to do with const
+-- just missed using contramap
+--  error "todo: Course.Contravariant#(>$)"
+-- usage of >$<
+--runPredicate ((+1) >$< Predicate even) 2

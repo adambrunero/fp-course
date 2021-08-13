@@ -13,12 +13,13 @@ Parser has been completed earlier during the FP course
 StateT - a bit tough, I am going to compose and traversable, finished 2/8/21
 Extend 3/8/21
 Comonad 5/8/21 - this was relatively straightforward
+Contravariant - completed, there are no answers but the results type checked and worked for some examples
+Alternative - implemented the optional instance, not worrying about Parser
+
 
 Courses to complete..
 
-
-Contravariant
-ListZipper
+ListZipper - Starting 13/8/21
 MoreParser
 JsonParser1
 Interactive

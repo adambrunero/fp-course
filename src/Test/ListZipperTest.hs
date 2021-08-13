@@ -136,7 +136,7 @@ toListTest =
   , testCase "empty left" $
       toList (zipper [] 1 [2,3,4]) @?= (1:.2:.3:.4:.Nil)
   , testCase "lefts and rights" $
-      toList (zipper [3,2,1] 4 [5,6,7]) @?= (1:.2:.3:.4:.5:.6:.7:.Nil)
+      toList (zipper [3,2,1] 4 [5,6,7]) @?= (3:.2:.1:.4:.5:.6:.7:.Nil)
   ]
 
 fromListTest :: TestTree

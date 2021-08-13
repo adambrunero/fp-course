@@ -69,16 +69,23 @@ isNotZ = MLZ Empty
 -- >>> (+1) <$> (zipper [3,2,1] 4 [5,6,7])
 -- [4,3,2] >5< [6,7,8]
 instance Functor ListZipper where
-  (<$>) =
-    error "todo: Course.ListZipper (<$>)#instance ListZipper"
+  (<$>) f (ListZipper l x r) = ListZipper (f <$> l) (f x) (f <$> r)
+--    error "todo: Course.ListZipper (<$>)#instance ListZipper"
 
 -- | Implement the `Functor` instance for `MaybeListZipper`.
 --
 -- >>> (+1) <$> (MLZ (Full (zipper [3,2,1] 4 [5,6,7])))
 -- [4,3,2] >5< [6,7,8]
 instance Functor MaybeListZipper where
-  (<$>) =
-    error "todo: Course.ListZipper (<$>)#instance MaybeListZipper"
+  (<$>) f (MLZ (Full a)) = isZ (f <$> a)
+  (<$>) f (MLZ Empty) = isNotZ
+-- after a lot of todo this has been done,
+-- the answers use data type rather than a newtype
+-- however this is integrated all through the tests, 
+-- not worth the hassle of changing. 
+-- will do a filthy pattern match
+
+--    error "todo: Course.ListZipper (<$>)#instance MaybeListZipper"
 
 -- | Convert the given zipper back to a list.
 --
@@ -90,20 +97,14 @@ instance Functor MaybeListZipper where
 --
 -- >>> toList (ListZipper (3:.2:.1:.Nil) 4 (5:.6:.7:.Nil))
 -- [1,2,3,4,5,6,7]
-toList ::
-  ListZipper a
-  -> List a
-toList =
-  error "todo: Course.ListZipper#toList"
+toList :: ListZipper a -> List a
+toList (ListZipper l x r) = (l ++ (x :. Nil) ++ r)
+--  error "todo: Course.ListZipper#toList"
 
 -- | Convert the given (maybe) zipper back to a list.
-toListZ ::
-  MaybeListZipper a
-  -> List a
-toListZ (MLZ Empty) =
-  Nil
-toListZ (MLZ (Full z)) =
-  toList z
+toListZ :: MaybeListZipper a -> List a
+toListZ (MLZ Empty) = Nil
+toListZ (MLZ (Full z)) = toList z
 
 -- | Create a `MaybeListZipper` positioning the focus at the head.
 --
@@ -114,11 +115,10 @@ toListZ (MLZ (Full z)) =
 -- ><
 --
 -- prop> \xs -> xs == toListZ (fromList xs)
-fromList ::
-  List a
-  -> MaybeListZipper a
-fromList =
-  error "todo: Course.ListZipper#fromList"
+fromList :: List a -> MaybeListZipper a
+fromList (l:.x) = MLZ (Full (zipper [] l (hlist x)))
+fromList Nil = isNotZ
+--  error "todo: Course.ListZipper#fromList"
 
 -- | Retrieve the `ListZipper` from the `MaybeListZipper` if there is one.
 --

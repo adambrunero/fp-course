@@ -72,10 +72,8 @@ instance Functor ListZipper where
 -- >>> (+1) <$> (IsZ (zipper [3,2,1] 4 [5,6,7]))
 -- [4,3,2] >5< [6,7,8]
 instance Functor MaybeListZipper where
-  f <$> (IsZ z) =
-    IsZ (f <$> z)
-  _ <$> IsNotZ =
-    IsNotZ
+  f <$> (IsZ z) = IsZ (f <$> z)
+  _ <$> IsNotZ = IsNotZ
 
 -- | Convert the given zipper back to a list.
 --
